@@ -26,12 +26,12 @@ def validate_schema_structure(schema):
         print("Error: Schema must be a JSON object")
         return False
 
-    if '$jsonSchema' not in schema:
+    if "$jsonSchema" not in schema:
         print("Error: Schema must include $jsonSchema property")
         return False
 
-    json_schema = schema['$jsonSchema']
-    required_keys = {'bsonType', 'properties'}
+    json_schema = schema["$jsonSchema"]
+    required_keys = {"properties"}
     if not all(key in json_schema for key in required_keys):
         print("Error: Schema must include bsonType and properties")
         return False
@@ -43,10 +43,10 @@ def apply_schema_to_collection():
     """Apply schema validation to MongoDB collection"""
     try:
         # Get configuration from .env
-        mongo_uri = config('MONGO_URI')
-        db_name = config('DB_NAME')
-        collection_name = config('COLLECTION_NAME')
-        schema_url = config('SCHEMA_URL')
+        mongo_uri = config("MONGO_URI")
+        db_name = config("DB_NAME")
+        collection_name = config("COLLECTION_NAME")
+        schema_url = config("SCHEMA_URL")
 
         # Fetch and validate schema
         schema = fetch_schema_from_url(schema_url)
@@ -63,14 +63,15 @@ def apply_schema_to_collection():
 
         # Apply schema validation
         db.command({
-            'collMod': collection_name,
-            'validator': schema,
-            'validationLevel': 'strict',
-            'validationAction': 'error'
+            "collMod": collection_name,
+            "validator": schema,
+            "validationLevel": "strict",
+            "validationAction": "error"
         })
 
         print(
-            f"✅ Successfully applied schema to collection '{collection_name}'")
+            f"✅ Successfully applied schema to collection '{collection_name}'"
+        )
         return True
 
     except Exception as e:

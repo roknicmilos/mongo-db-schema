@@ -1,0 +1,81 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": [
+    "id",
+    "firstName",
+    "lastName",
+    "email",
+    "address"
+  ],
+  "properties": {
+    "id": {
+      "type": "integer"
+    },
+    "firstName": {
+      "type": "string"
+    },
+    "lastName": {
+      "type": "string"
+    },
+    "phoneNumber": {
+      "type": "string",
+      "pattern": "^\\+\\d{9,15}$"
+    },
+    "email": {
+      "type": "string",
+      "format": "email"
+    },
+    "address": {
+      "type": "object",
+      "required": [
+        "city",
+        "zipCode",
+        "streetName",
+        "streetNumber"
+      ],
+      "properties": {
+        "city": {
+          "type": "string"
+        },
+        "zipCode": {
+          "type": "integer"
+        },
+        "streetName": {
+          "type": "string"
+        },
+        "streetNumber": {
+          "type": "string"
+        }
+      }
+    },
+    "bookings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "location",
+          "fromDate",
+          "untilDate"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "location": {
+            "type": "string"
+          },
+          "fromDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "untilDate": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      }
+    }
+  }
+}
