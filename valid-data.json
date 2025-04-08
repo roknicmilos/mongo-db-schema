@@ -1,0 +1,27 @@
+{
+  "id": 1,
+  "firstName": "Jon",
+  "lastName": "Doe",
+  "phoneNumber": "+999999999999",
+  "email": "jon.doe@example.com",
+  "address": {
+    "city": "New York",
+    "zipCode": 12345,
+    "streetName": "Roosevelt Street",
+    "streetNumber": "1a"
+  },
+  "bookings": [
+    {
+      "id": 1,
+      "location": "40 Blackfriars Rd, London SE1 8NY, United Kingdom",
+      "fromDate": "2025-01-01",
+      "untilDate": "2025-07-01"
+    },
+    {
+      "id": 2,
+      "location": "25 Lower Marsh, London SE1 7RJ, United Kingdom",
+      "fromDate": "2025-07-01",
+      "untilDate": "2025-12-01"
+    }
+  ]
+}

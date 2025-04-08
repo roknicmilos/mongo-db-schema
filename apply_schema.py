@@ -2,8 +2,92 @@ import sys
 import json
 import requests
 
-from pymongo import MongoClient
 from decouple import config
+
+import mongo
+
+
+def replace_type_with_bson_type(schema):
+    """
+    Recursively replace 'type' with MongoDB-compatible 'bsonType'
+    """
+
+    type_mapping = {
+        "integer": "int",
+        "number": "double",
+        "string": "string",
+        "boolean": "bool",
+        "array": "array",
+        "object": "object"
+    }
+
+    if isinstance(schema, dict):
+        if "type" in schema:
+            schema["bsonType"] = type_mapping.get(schema.pop("type"), "string")
+        for key, value in schema.items():
+            replace_type_with_bson_type(value)
+
+    elif isinstance(schema, list):
+        for item in schema:
+            replace_type_with_bson_type(item)
+
+    return schema
+
+
+def convert_to_mongodb_schema(json_schema):
+    """Convert standard JSON Schema to MongoDB's $jsonSchema format"""
+
+    type_mapping = {
+        "integer": "int",
+        "number": "double",
+        "string": "string",
+        "boolean": "bool",
+        "array": "array",
+        "object": "object"
+    }
+
+    def replace_type_recursive(schema):
+        if isinstance(schema, dict):
+            # Replace 'type' with 'bsonType'
+            if "type" in schema:
+                schema["bsonType"] = type_mapping.get(
+                    schema.pop("type"), "string"
+                )
+
+            # Handle format conversions
+            if "format" in schema:
+                if schema.get("bsonType") == "string":
+                    if schema["format"] == "email":
+                        schema["pattern"] = (
+                            "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+                        )
+                    elif schema["format"] == "date":
+                        schema["pattern"] = "^\\d{4}-\\d{2}-\\d{2}$"
+                schema.pop("format", None)
+
+            # Recurse into all nested dicts and lists
+            for key, value in schema.items():
+                replace_type_recursive(value)
+
+        elif isinstance(schema, list):
+            for item in schema:
+                replace_type_recursive(item)
+
+        return schema
+
+    # Build MongoDB schema
+    mongodb_schema = {"$jsonSchema": {}}
+
+    # Copy all top-level fields except $schema
+    for key, value in json_schema.items():
+        if key != "$schema":
+            mongodb_schema["$jsonSchema"][key] = value
+
+    # Recursively replace types and adjust formats
+    mongodb_schema["$jsonSchema"] = replace_type_recursive(
+        mongodb_schema["$jsonSchema"])
+
+    return mongodb_schema
 
 
 def fetch_schema_from_url(schema_url):
@@ -20,17 +104,17 @@ def fetch_schema_from_url(schema_url):
         return None
 
 
-def validate_schema_structure(schema):
+def validate_mongodb_schema_structure(mongodb_schema):
     """Validate the schema structure meets MongoDB requirements"""
-    if not isinstance(schema, dict):
+    if not isinstance(mongodb_schema, dict):
         print("Error: Schema must be a JSON object")
         return False
 
-    if "$jsonSchema" not in schema:
+    if "$jsonSchema" not in mongodb_schema:
         print("Error: Schema must include $jsonSchema property")
         return False
 
-    json_schema = schema["$jsonSchema"]
+    json_schema = mongodb_schema["$jsonSchema"]
     required_keys = {"properties"}
     if not all(key in json_schema for key in required_keys):
         print("Error: Schema must include bsonType and properties")
@@ -42,35 +126,29 @@ def validate_schema_structure(schema):
 def apply_schema_to_collection():
     """Apply schema validation to MongoDB collection"""
     try:
-        # Get configuration from .env
-        mongo_uri = config("MONGO_URI")
-        db_name = config("DB_NAME")
-        collection_name = config("COLLECTION_NAME")
         schema_url = config("SCHEMA_URL")
 
         # Fetch and validate schema
         schema = fetch_schema_from_url(schema_url)
-        if not schema or not validate_schema_structure(schema):
+        mongodb_schema = convert_to_mongodb_schema(schema)
+        if not validate_mongodb_schema_structure(mongodb_schema):
             return False
 
-        # Connect to MongoDB
-        client = MongoClient(mongo_uri)
-        db = client[db_name]
-
         # Create collection if it doesn't exist
-        if collection_name not in db.list_collection_names():
-            db.create_collection(collection_name)
+        if mongo.collection_name not in mongo.db.list_collection_names():
+            mongo.db.create_collection(mongo.collection_name)
 
         # Apply schema validation
-        db.command({
-            "collMod": collection_name,
-            "validator": schema,
+        mongo.db.command({
+            "collMod": mongo.collection_name,
+            "validator": mongodb_schema,
             "validationLevel": "strict",
             "validationAction": "error"
         })
 
         print(
-            f"✅ Successfully applied schema to collection '{collection_name}'"
+            f"✅ Successfully applied schema to collection "
+            f"'{mongo.collection_name}'"
         )
         return True
 
