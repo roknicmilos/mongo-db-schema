@@ -1,6 +1,8 @@
 {
   "id": 1,
   "firstName": "Jon",
+  "lastName": "Doe",
+  "unknownField": "This field is not defined in the schema",
   "phoneNumber": "+999999999999",
   "email": "jon.doe@example.com",
   "address": {
