@@ -4,7 +4,7 @@ import requests
 
 from decouple import config
 
-import mongo
+import mongodb
 
 
 def replace_type_with_bson_type(schema):
@@ -35,7 +35,9 @@ def replace_type_with_bson_type(schema):
 
 
 def convert_to_mongodb_schema(json_schema):
-    """Convert standard JSON Schema to MongoDB's $jsonSchema format"""
+    """
+    Convert standard JSON Schema to MongoDB's $jsonSchema format
+    """
 
     type_mapping = {
         "integer": "int",
@@ -91,7 +93,9 @@ def convert_to_mongodb_schema(json_schema):
 
 
 def fetch_schema_from_url(schema_url):
-    """Fetch JSON schema from a public URL"""
+    """
+    Fetch JSON schema from a public URL
+    """
     try:
         response = requests.get(schema_url)
         response.raise_for_status()
@@ -105,7 +109,9 @@ def fetch_schema_from_url(schema_url):
 
 
 def validate_mongodb_schema_structure(mongodb_schema):
-    """Validate the schema structure meets MongoDB requirements"""
+    """
+    Validate the schema structure meets MongoDB requirements
+    """
     if not isinstance(mongodb_schema, dict):
         print("Error: Schema must be a JSON object")
         return False
@@ -135,12 +141,12 @@ def apply_schema_to_collection():
             return False
 
         # Create collection if it doesn't exist
-        if mongo.collection_name not in mongo.db.list_collection_names():
-            mongo.db.create_collection(mongo.collection_name)
+        if mongodb.collection_name not in mongodb.db.list_collection_names():
+            mongodb.db.create_collection(mongodb.collection_name)
 
         # Apply schema validation
-        mongo.db.command({
-            "collMod": mongo.collection_name,
+        mongodb.db.command({
+            "collMod": mongodb.collection_name,
             "validator": mongodb_schema,
             "validationLevel": "strict",
             "validationAction": "error"
@@ -148,7 +154,7 @@ def apply_schema_to_collection():
 
         print(
             f"✅ Successfully applied schema to collection "
-            f"'{mongo.collection_name}'"
+            f"'{mongodb.collection_name}'"
         )
         return True
 
